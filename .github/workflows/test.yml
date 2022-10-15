@@ -1,0 +1,1181 @@
+name: test ci/cd-workflow
+
+on:
+  pull_request:
+    branches:
+      - master
+
+env:
+  AWS_ACCOUNT: "${{ secrets.AWS_ACCOUNT_NUMBER }}"
+  STAGE: test
+  REGION: us-east-1
+  PROVCON: 0
+  USER_POOL_ID: us-east-1_AWebLRzDl
+  DASHBOARD_USER_POOL_ID: us-east-1_HQQmgFi3I
+  db_env: local
+  db_name: testcelitechcoredb
+  aws_secret_store_arn: "${{ secrets.TEST_AWS_SECRET_STORE_ARN }}"
+  db_cluster_arn: "${{ secrets.TEST_DB_CLUSTER_ARN }}"
+  secret_stripe_key: "${{ secrets.TEST_SECRET_STRIPE_KEY }}"
+  MNO_URL: "${{secrets.TEST_MNO_URL}}"
+  DISTRIBUTOR_ID: "${{secrets.TEST_DISTRIBUTOR_ID}}"
+  INVENTORY_ID: "${{secrets.TEST_INVENTORY_ID}}"
+  API_KEY: "${{secrets.TEST_API_KEY}}"
+  AUTH: "${{secrets.TEST_AUTH}}"
+  ICCID_QUEUE_URL: test-iccid-queue.fifo
+  auto_refill_bucket_name: test-core-qr-bucket
+  minimum_batch_esim_count: 10
+  XRAY_WRAPPER_FLAG: false
+  DEVICE_INFO_API_KEY_SECRET_NAME: "${{ secrets.DEVICE_INFO_API_KEY_SECRET_NAME }}"
+  BEE_API_ID: tshnuiufz7
+  DASHBOARD_API_ID: 3i9p1rvnh4
+  USERPOOL_API_ID: wv1yjr74zh
+  CONSUMPTIONS_BUCKET: core-test-consumptions-reports
+  RSP_URL: "${{secrets.TEST_RSP_URL}}"
+  RSP_FRI: "${{secrets.TEST_RSP_FRI}}"
+  RSP_SECRET: "${{secrets.TEST_RSP_SECRET}}"
+  SENDGRID_KEY: "${{ secrets.SENDGRID_KEY }}"
+  UNWIRED_LABS_SECRET_NAME: staging_unwiredlabs_api
+  UNWIRED_LABS_BASE_URL: "https://us1.unwiredlabs.com/v2/process.php"
+  SVIX_API_KEY: testsk_mmOeW-YmIFeo-SYTE-1CV3hpFH8nXwbl
+  PRICE_LIST_BUCKET_NAME: price-list-test
+  PRICE_LIST_KEY: all-price-list-items.csv
+  IMSI_BUCKET_NAME: core-test-imsi-bucket
+  STOCK_FOLDER_NAME: stock
+  ONLINE_FOLDER_NAME: online
+  LOADED_FOLDER_NAME: loaded
+  IMSI_BUCKET: core-test-imsi-bucket
+  MONITORING_ENABLED: false
+  QR_CODE_LOGOS_BUCKET: core-test-qr-code-logos
+  CDR_RECEIVING_BUCKET_NAME: core-test-emulate-cdr-bucket
+  EXISTING_S3_BUCKET: true
+  LOCATION_BUCKET_REGION: us-east-1
+  CONSUMPTION_CHECK_ENABLED: false
+  CONNECTIVITY_SCHEDULER_ENABLED: false
+
+jobs:
+  run-lint-and-prettier:
+    name: run-lint-and-prettier
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+          # Make sure the value of GITHUB_TOKEN will not be persisted in repo's config
+          persist-credentials: false
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install global dependencies
+        run: |
+          npm i -g npm@8.5.4
+      - name: Install dependencies
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: |
+          npm install
+          cd apis/partners-admins
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env
+          npm run config --workspaces --if-present
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+
+      - name: Lint The Code Base
+        run: npm run lint
+      - name: Type Check The Code Base
+        run: tsc --noEmit
+      - name: Format The Code Base
+        uses: creyD/prettier_action@v4.2
+        with:
+          # This part is also where you can pass other options, for example:
+          prettier_options: --write **/*.{ts,js,md,json,yml,yaml}
+          only_changed: True
+          commit_message: "Prettified Code! - [skip ci]"
+          # Set your custom token
+          github_token: ${{ secrets.PRETTIER_ACCESS_TOKEN }}
+  analyse-services:
+    needs: run-lint-and-prettier
+    uses: ./.github/workflows/analyse-services.yml
+    with:
+      base: "master"
+
+  test-destination-service:
+    name: test-destination-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.destination == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run OpenAPI tests destination
+        run: npm run tests -workspace=destination
+
+  test-customer-service:
+    name: test-customer-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.customer == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run OpenAPI tests customer
+        run: npm run tests -workspace=customer
+
+  test-session-service:
+    name: test-session-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.session == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run OpenAPI tests session
+        run: npm run tests -workspace=session
+
+  test-billing-service:
+    name: test-billing-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.billing == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run billing tests
+        run: npm run tests -workspace=billing
+
+  test-mailing-service:
+    name: test-mailing-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.mailing == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run mailing tests
+        run: npm run tests -workspace=mailing
+
+  test-admins-info-service:
+    name: test-admins-info-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.admins_info == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run admins info tests
+        run: npm run tests -workspace=admins-info
+  test-price-list-service:
+    name: test-price-list-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.price_list == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run price list tests
+        run: npm run tests -workspace=price-list
+  test-webhook-service:
+    name: test-webhook-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.webhook == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run webhook tests
+        run: npm run tests -workspace=webhook
+
+  test-rsp-service:
+    name: test-rsp-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.rsp == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run rsp tests
+        run: npm run tests -workspace=rsp
+
+  test-location-reporting-service:
+    name: test-location-reporting-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.location_reporting == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run location reporting tests
+        run: npm run tests -workspace=location-reporting
+
+  test-purchase-service:
+    name: test-purchase-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.purchase == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run purchase tests
+        run: npm run tests -workspace=purchase
+
+  test-platform-packages-service:
+    name: test-platform-packages-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.platform_packages == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run platform packages tests
+        run: npm run tests -workspace=platform-packages
+
+  test-monitoring-service:
+    name: test-monitoring-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.monitoring == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run monitoring tests
+        run: npm run tests -workspace=monitoring
+
+  test-aws-cognito-service:
+    name: test-aws-cognito-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.authnr == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run AWS cognito tests
+        run: npm run tests -workspace=aws-cognito
+
+  test-imsi-service:
+    name: test-imsi-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.imsi == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run IMSI tests
+        run: npm run tests -workspace=imsi
+
+  test-connectivity-service:
+    name: test-connectivity-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.connectivity == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run connectivity tests
+        run: npm run tests -workspace=connectivity
+
+  test-platforms-service:
+    name: test-platforms-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.platforms == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run platforms tests
+        run: npm run tests -workspace=platforms
+
+  test-package-list-service:
+    name: test-package-list-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.package_list == 'true' || needs.analyse-services.outputs.tests == 'true' }}"
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run MySQL database
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE testcelitechcoredb;' -u root --password=root
+          mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root'" -u root --password=root
+      - name: Create database
+        run: npm run datalayer:create
+      - name: Sync database
+        run: npm run datalayer:sync
+      - name: Seed partners test data
+        run: npm run datalayer:seed
+      - name: Generate OpenAPI tests config
+        run: npm run generate:test:config:partners
+      - name: Generate offline OpenAPI spec
+        run: npm run openapi:test:partners
+      - name: Run package list tests
+        run: npm run tests -workspace=package-list

@@ -1,0 +1,273 @@
+on:
+  workflow_call:
+    inputs:
+      base:
+        required: true
+        type: string
+    outputs:
+      general:
+        value: "${{ jobs.analyse-services.outputs.general }}"
+      connectivity:
+        value: "${{ jobs.analyse-services.outputs.connectivity }}"
+      location_reporting:
+        value: "${{ jobs.analyse-services.outputs.location_reporting }}"
+      billing:
+        value: "${{ jobs.analyse-services.outputs.billing }}"
+      webhook:
+        value: "${{ jobs.analyse-services.outputs.webhook }}"
+      rsp:
+        value: "${{ jobs.analyse-services.outputs.rsp }}"
+      authnr:
+        value: "${{ jobs.analyse-services.outputs.authnr }}"
+      mailing:
+        value: "${{ jobs.analyse-services.outputs.mailing }}"
+      monitoring:
+        value: "${{ jobs.analyse-services.outputs.monitoring }}"
+      platform_packages:
+        value: "${{ jobs.analyse-services.outputs.platform_packages }}"
+      package_list:
+        value: "${{ jobs.analyse-services.outputs.package_list }}"
+      purchase:
+        value: "${{ jobs.analyse-services.outputs.purchase }}"
+      esim:
+        value: "${{ jobs.analyse-services.outputs.esim }}"
+      imsi:
+        value: "${{ jobs.analyse-services.outputs.imsi }}"
+      admins_info:
+        value: "${{ jobs.analyse-services.outputs.admins_info }}"
+      session:
+        value: "${{ jobs.analyse-services.outputs.session }}"
+      customer:
+        value: "${{ jobs.analyse-services.outputs.customer }}"
+      destination:
+        value: "${{ jobs.analyse-services.outputs.destination }}"
+      price_list:
+        value: "${{ jobs.analyse-services.outputs.price_list }}"
+      platforms:
+        value: "${{ jobs.analyse-services.outputs.platforms }}"
+      dashboard:
+        value: "${{ jobs.analyse-services.outputs.dashboard }}"
+      apisec:
+        value: "${{ jobs.analyse-services.outputs.apisec }}"
+      tests:
+        value: "${{ jobs.analyse-services.outputs.tests }}"
+
+jobs:
+  analyse-services:
+    name: analyse-services
+    runs-on: [ubuntu-latest]
+    outputs:
+      general: "${{ steps.changes.outputs.general }}"
+      connectivity: "${{ steps.changes.outputs.connectivity }}"
+      location_reporting: "${{ steps.changes.outputs.location_reporting }}"
+      billing: "${{ steps.changes.outputs.billing }}"
+      webhook: "${{ steps.changes.outputs.webhook }}"
+      rsp: "${{ steps.changes.outputs.rsp }}"
+      authnr: "${{ steps.changes.outputs.authnr }}"
+      mailing: "${{ steps.changes.outputs.mailing }}"
+      monitoring: "${{ steps.changes.outputs.monitoring }}"
+      platform_packages: "${{ steps.changes.outputs.platform_packages }}"
+      package_list: "${{ steps.changes.outputs.package_list }}"
+      purchase: "${{ steps.changes.outputs.purchase }}"
+      esim: "${{ steps.changes.outputs.esim }}"
+      imsi: "${{ steps.changes.outputs.imsi }}"
+      admins_info: "${{ steps.changes.outputs.admins_info }}"
+      session: "${{ steps.changes.outputs.session }}"
+      customer: "${{ steps.changes.outputs.customer }}"
+      destination: "${{ steps.changes.outputs.destination }}"
+      price_list: "${{ steps.changes.outputs.price_list }}"
+      platforms: "${{ steps.changes.outputs.platforms }}"
+      dashboard: "${{ steps.changes.outputs.dashboard }}"
+      apisec: "${{ steps.changes.outputs.apisec }}"
+      tests: "${{ steps.changes.outputs.tests }}"
+    steps:
+      - uses: actions/checkout@master
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          base: ${{ inputs.base }}
+          filters: |
+            general:
+              - '.github/**'
+              - 'services/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            connectivity:
+              - '.github/**'
+              - 'services/connectivity/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            location_reporting:
+              - '.github/**'
+              - 'services/location-reporting/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            billing:
+              - '.github/**'
+              - 'services/billing/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            webhook:
+              - '.github/**'
+              - 'services/webhook/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            rsp:
+              - '.github/**'
+              - 'services/rsp/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            authnr:
+              - '.github/**'
+              - 'services/aws-cognito/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            mailing:
+              - '.github/**'
+              - 'services/mailing/**'
+              - 'common/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            monitoring:
+              - '.github/**'
+              - 'services/monitoring/**'
+              - 'common/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            platform_packages:
+              - '.github/**'
+              - 'services/rsp/**'
+              - 'services/platform-packages/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            package_list:
+              - '.github/**'
+              - 'services/package-list/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            purchase:
+              - '.github/**'
+              - 'services/rsp/**'
+              - 'services/purchase/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            esim:
+              - '.github/**'
+              - 'services/rsp/**'
+              - 'services/esim/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            imsi:
+              - '.github/**'
+              - 'services/rsp/**'
+              - 'services/imsi/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            admins_info:
+              - '.github/**'
+              - 'services/admins-info/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            session:
+              - '.github/**'
+              - 'services/session/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            customer:
+              - '.github/**'
+              - 'services/customer/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            destination:
+              - '.github/**'
+              - 'services/destination/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            price_list:
+              - '.github/**'
+              - 'services/price-list/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            platforms:
+              - '.github/**'
+              - 'services/platforms/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+            dashboard:
+              - '.github/**'
+              - 'services/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'apis/partners-admins/**'
+            apisec:
+              - '.github/**'
+              - 'services/**'
+              - 'common/**'
+              - 'data-layer/**'
+              - 'scripts/generate-config/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'apis/partners-admins/**'
+            tests:
+              - '.github/**'
+              - 'tests/**'
+              - 'docs/client-api/**'
+              - 'docs/dashboard-api/**'
