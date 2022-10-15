@@ -1,0 +1,1248 @@
+on:
+  workflow_call:
+    inputs:
+      env_name:
+        type: string
+        required: true
+      base_branch:
+        type: string
+        required: true
+      drop_create_db:
+        type: boolean
+        default: false
+      STAGE:
+        type: string
+        required: true
+      REGION:
+        type: string
+        required: true
+      PROVCON:
+        type: string
+        required: true
+      USER_POOL_ID:
+        type: string
+        required: true
+      DASHBOARD_USER_POOL_ID:
+        type: string
+        required: true
+      db_env:
+        type: string
+        required: true
+      db_name:
+        type: string
+        required: true
+      aws_secret_store_arn:
+        type: string
+        required: true
+      db_cluster_arn:
+        type: string
+        required: true
+      secret_stripe_key:
+        type: string
+        required: true
+      MNO_URL:
+        type: string
+        required: true
+      DISTRIBUTOR_ID:
+        type: string
+        required: true
+      INVENTORY_ID:
+        type: string
+        required: true
+      API_KEY:
+        type: string
+        required: true
+      AUTH:
+        type: string
+        required: true
+      ICCID_QUEUE_URL:
+        type: string
+        required: true
+      auto_refill_bucket_name:
+        type: string
+        required: true
+      minimum_batch_esim_count:
+        type: string
+        required: true
+      XRAY_WRAPPER_FLAG:
+        type: string
+        required: true
+      DEVICE_INFO_API_KEY_SECRET_NAME:
+        type: string
+        required: true
+      BEE_API_ID:
+        type: string
+        required: true
+      DASHBOARD_API_ID:
+        type: string
+        required: true
+      USERPOOL_API_ID:
+        type: string
+        required: true
+      CONSUMPTIONS_BUCKET:
+        type: string
+        required: true
+      RSP_URL:
+        type: string
+        required: true
+      RSP_FRI:
+        type: string
+        required: true
+      RSP_SECRET:
+        type: string
+        required: true
+      SENDGRID_KEY:
+        type: string
+        required: true
+      UNWIRED_LABS_SECRET_NAME:
+        type: string
+        required: true
+      UNWIRED_LABS_BASE_URL:
+        type: string
+        required: true
+        type: string
+        required: true
+      SVIX_API_KEY:
+        type: string
+        required: true
+      PRICE_LIST_BUCKET_NAME:
+        type: string
+        required: true
+      PRICE_LIST_KEY:
+        type: string
+        required: true
+      IMSI_BUCKET_NAME:
+        type: string
+        required: true
+      STOCK_FOLDER_NAME:
+        type: string
+        required: true
+      ONLINE_FOLDER_NAME:
+        type: string
+        required: true
+      LOADED_FOLDER_NAME:
+        type: string
+        required: true
+      IMSI_BUCKET:
+        type: string
+        required: true
+      MONITORING_ENABLED:
+        type: string
+        required: true
+      QR_CODE_LOGOS_BUCKET:
+        type: string
+        required: true
+      CDR_RECEIVING_BUCKET_NAME:
+        type: string
+        required: true
+      EXISTING_S3_BUCKET:
+        type: string
+        required: true
+      LOCATION_BUCKET_REGION:
+        type: string
+        required: true
+      CONSUMPTION_CHECK_ENABLED:
+        type: string
+        required: true
+      CONNECTIVITY_SCHEDULER_ENABLED:
+        type: string
+        required: true
+
+env:
+  STAGE: ${{inputs.STAGE}}
+  REGION: ${{inputs.REGION}}
+  PROVCON: ${{inputs.PROVCON}}
+  USER_POOL_ID: ${{inputs.USER_POOL_ID}}
+  DASHBOARD_USER_POOL_ID: ${{inputs.DASHBOARD_USER_POOL_ID}}
+  db_env: ${{inputs.db_env}}
+  db_name: ${{inputs.db_name}}
+  aws_secret_store_arn: ${{inputs.aws_secret_store_arn}}
+  db_cluster_arn: ${{inputs.db_cluster_arn}}
+  secret_stripe_key: ${{inputs.secret_stripe_key}}
+  MNO_URL: ${{inputs.MNO_URL}}
+  DISTRIBUTOR_ID: ${{inputs.DISTRIBUTOR_ID}}
+  INVENTORY_ID: ${{inputs.INVENTORY_ID}}
+  API_KEY: ${{inputs.API_KEY}}
+  AUTH: ${{inputs.AUTH}}
+  ICCID_QUEUE_URL: ${{inputs.ICCID_QUEUE_URL}}
+  auto_refill_bucket_name: ${{inputs.auto_refill_bucket_name}}
+  minimum_batch_esim_count: ${{inputs.minimum_batch_esim_count}}
+  XRAY_WRAPPER_FLAG: ${{inputs.XRAY_WRAPPER_FLAG}}
+  DEVICE_INFO_API_KEY_SECRET_NAME: ${{inputs.DEVICE_INFO_API_KEY_SECRET_NAME}}
+  BEE_API_ID: ${{inputs.BEE_API_ID}}
+  DASHBOARD_API_ID: ${{inputs.DASHBOARD_API_ID}}
+  USERPOOL_API_ID: ${{inputs.USERPOOL_API_ID}}
+  CONSUMPTIONS_BUCKET: ${{inputs.CONSUMPTIONS_BUCKET}}
+  RSP_URL: ${{inputs.RSP_URL}}
+  RSP_FRI: ${{inputs.RSP_FRI}}
+  RSP_SECRET: ${{inputs.RSP_SECRET}}
+  SENDGRID_KEY: ${{inputs.SENDGRID_KEY}}
+  UNWIRED_LABS_SECRET_NAME: ${{inputs.UNWIRED_LABS_SECRET_NAME}}
+  UNWIRED_LABS_BASE_URL: ${{inputs.UNWIRED_LABS_BASE_URL}}
+  SVIX_API_KEY: ${{inputs.SVIX_API_KEY}}
+  PRICE_LIST_BUCKET_NAME: ${{inputs.PRICE_LIST_BUCKET_NAME}}
+  PRICE_LIST_KEY: ${{inputs.PRICE_LIST_KEY}}
+  IMSI_BUCKET_NAME: ${{inputs.IMSI_BUCKET_NAME}}
+  STOCK_FOLDER_NAME: ${{inputs.STOCK_FOLDER_NAME}}
+  ONLINE_FOLDER_NAME: ${{inputs.ONLINE_FOLDER_NAME}}
+  LOADED_FOLDER_NAME: ${{inputs.LOADED_FOLDER_NAME}}
+  IMSI_BUCKET: ${{inputs.IMSI_BUCKET}}
+  MONITORING_ENABLED: ${{inputs.MONITORING_ENABLED}}
+  QR_CODE_LOGOS_BUCKET: ${{inputs.QR_CODE_LOGOS_BUCKET}}
+  CDR_RECEIVING_BUCKET_NAME: ${{inputs.CDR_RECEIVING_BUCKET_NAME}}
+  EXISTING_S3_BUCKET: ${{inputs.EXISTING_S3_BUCKET}}
+  LOCATION_BUCKET_REGION: ${{inputs.LOCATION_BUCKET_REGION}}
+  CONSUMPTION_CHECK_ENABLED: ${{inputs.CONSUMPTION_CHECK_ENABLED}}
+  CONNECTIVITY_SCHEDULER_ENABLED: ${{inputs.CONNECTIVITY_SCHEDULER_ENABLED}}
+
+jobs:
+  analyse-services:
+    uses: ./.github/workflows/analyse-services.yml
+    with:
+      base: ${{inputs.base_branch}}
+
+  deploy-clients-api:
+    name: deploy-clients-api
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.general == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install global dependencies
+        run: |
+          npm i -g npm@8.5.4
+          npm i -g serverless@3.7.4
+      - name: Install dependencies
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy Clients API
+        run: |
+          cp apis/core-partners-api.yml serverless.yml
+          serverless deploy --verbose --force
+          rm serverless.yml
+          
+  deploy-platforms-service:
+    name: deploy-platforms-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.platforms == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install global dependencies
+        run: |
+          npm i -g npm@8.5.4
+          npm i -g serverless@3.7.4
+      - name: Install dependencies
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy platforms service
+        run: npm run deploy -workspace=platforms
+
+  deploy-package-list-service:
+    name: deploy-package-list-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.package_list == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install global dependencies
+        run: |
+          npm i -g npm@8.5.4
+          npm i -g serverless@3.7.4
+      - name: Install dependencies
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy package-list service
+        run: npm run deploy -workspace=package-list
+
+  deploy-purchase-service:
+    name: deploy-purchase-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.purchase == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install global dependencies
+        run: |
+          npm i -g npm@8.5.4
+          npm i -g serverless@3.7.4
+      - name: Install dependencies
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy purchase service
+        run: npm run deploy -workspace=purchase
+
+  deploy-platform-packages-service:
+    name: deploy-platform-packages-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.platform_packages == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install global dependencies
+        run: |
+          npm i -g npm@8.5.4
+          npm i -g serverless@3.7.4
+      - name: Install dependencies
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy platform packages service
+        run: npm run deploy -workspace=platform-packages
+
+  deploy-esim-service:
+    name: deploy-esim-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.esim == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        id: cache-primes
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # caching node_modules
+          path: node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install global dependencies
+        run: |
+          npm i -g npm@8.5.4
+          npm i -g serverless@3.7.4
+      - name: Install dependencies
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy eSIM service
+        run: npm run deploy -workspace=esim
+
+  deploy-imsi-service:
+    name: deploy-imsi-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.imsi == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy IMSI service
+        run: npm run deploy -workspace=imsi
+  deploy-admins-info-service:
+    name: deploy-admins-info-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.admins_info == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy admins info service
+        run: npm run deploy -workspace=admins-info
+  deploy-session-service:
+    name: deploy-session-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.session == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy session service
+        run: npm run deploy -workspace=session
+  deploy-customer-service:
+    name: deploy-customer-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.customer == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy customer service
+        run: npm run deploy -workspace=customer
+  deploy-destination-service:
+    name: deploy-destination-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.destination == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy destination service
+        run: npm run deploy -workspace=destination
+  deploy-price-list-service:
+    name: deploy-price-list-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.price_list == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy price list service
+        run: npm run deploy -workspace=price-list
+
+  deploy-rsp-service:
+    name: deploy-rsp-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.rsp == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy RSP service
+        run: npm run deploy -workspace=rsp
+  deploy-authnr-service:
+    name: deploy-authnr-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.authnr == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy authNR service
+        run: npm run deploy -workspace=aws-cognito
+  deploy-connectivity-service:
+    name: deploy-connectivity-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.connectivity == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy connectivity service
+        run: npm run deploy -workspace=connectivity
+  deploy-location-report-service:
+    name: deploy-location-report-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.location_reporting == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy location report service
+        run: npm run deploy -workspace=location-reporting
+  deploy-webhook-service:
+    name: deploy-webhook-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.webhook == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy webhook service
+        run: npm run deploy -workspace=webhook
+  deploy-billing-service:
+    name: deploy-billing-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.billing == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy billing service
+        run: npm run deploy -workspace=billing
+  deploy-mailing-service:
+    name: deploy-mailing-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.mailing == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env  
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy mailing service
+        run: npm run deploy -workspace=mailing
+
+  deploy-monitoring-service:
+    name: deploy-monitoring-service
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.monitoring == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy monitoring service
+        run: npm run deploy -workspace=monitoring
+  deploy-dashboard:
+    name: deploy-dashboard
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.dashboard == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm i -g aws-cdk@2.27.0
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy partners admin stack
+        run: |
+          cd apis/partners-admins
+          npm install
+          cdk deploy --require-approval never --all
+      - name: Deploy dashboard service
+        run: |
+          cp services/dashboard/serverless.yml serverless.yml
+          serverless deploy --verbose --force
+          rm serverless.yml
+  deploy-api-sec:
+    name: deploy-api-sec
+    needs: analyse-services
+    if: "${{ needs.analyse-services.outputs.apisec == 'true' }}"
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Deploy apisec dashboard service
+        run: |
+          cp services/apisec/serverless.yml serverless.yml
+          serverless deploy --verbose --force
+          rm serverless.yml
+
+  run-migrations:
+    name: run-migrations
+    runs-on: ubuntu-latest
+    environment: ${{inputs.env_name}}
+    if: ${{ always() && !cancelled()  && !failure() }}
+    needs:
+      - deploy-clients-api
+      - deploy-platforms-service
+      - deploy-package-list-service
+      - deploy-purchase-service
+      - deploy-platform-packages-service
+      - deploy-esim-service
+      - deploy-imsi-service
+      - deploy-admins-info-service
+      - deploy-session-service
+      - deploy-customer-service
+      - deploy-destination-service
+      - deploy-price-list-service
+      - deploy-rsp-service
+      - deploy-authnr-service
+      - deploy-connectivity-service
+      - deploy-location-report-service
+      - deploy-webhook-service
+      - deploy-billing-service
+      - deploy-mailing-service
+      - deploy-monitoring-service
+      - deploy-dashboard
+      - deploy-api-sec
+    steps:
+      - uses: actions/checkout@master
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Setup Node.js for use with actions
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8.5.4
+          npm i -g serverless@3.7.4
+          npm install
+      - name: Generate configurations
+        run: |
+          npm run generate:config
+          npm run generate:config:db:aurora
+          npm run generate:config:db:mysql
+          npm run generate:config:db:env   
+          npm run config --workspaces --if-present
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_KEY }}"
+          aws-region: us-east-1
+      - name: Run migrations
+        if: "${{ inputs.drop_create_db == false }}"
+        run: |
+          npm run generate:ormconfig:aurora
+          npm run datalayer:migrate
+      - name: Drop and create database
+        if: "${{ inputs.drop_create_db == true }}"
+        run: |
+          npm run datalayer:create
+          npm run datalayer:sync
+          npm run datalayer:seed
