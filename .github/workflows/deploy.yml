@@ -100,8 +100,6 @@ on:
       UNWIRED_LABS_BASE_URL:
         type: string
         required: true
-        type: string
-        required: true
       SVIX_API_KEY:
         type: string
         required: true
